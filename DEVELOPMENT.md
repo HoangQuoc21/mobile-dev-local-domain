@@ -26,6 +26,7 @@ Create a `.gitignore` file to exclude dependencies and build artifacts from Git:
 ```gitignore
 node_modules
 dist
+*.tgz
 ```
 
 ---
@@ -59,12 +60,13 @@ Key settings to update in `tsconfig.json`:
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+  },
 }
 ```
 
 ### Why `"module": "esnext"` and `"moduleResolution": "bundler"`?
+
 - By default, `tsc --init` may set `"module": "nodenext"`, which enforces Node.js native ESM rules requiring explicit `.js` extensions in relative imports (`import ... from "./file.js"`).
 - For packages consumed by bundlers (like **Metro** in React Native), `"module": "esnext"` with `"moduleResolution": "bundler"` allows clean extensionless imports (`import ... from "./getPlatform"`), which is required so Metro can resolve platform-specific files (`getPlatform.android.js`, `getPlatform.ios.js`).
 - If `"verbatimModuleSyntax": true` is enabled, TypeScript forces type imports to use `import type { ... }`. Commenting it out or using `import type` prevents build errors.
@@ -83,9 +85,7 @@ Make sure `package.json` includes the entry points, included files, and build sc
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
@@ -94,6 +94,7 @@ Make sure `package.json` includes the entry points, included files, and build sc
 ```
 
 ### Key Fields Explained
+
 - `"main"`: Entry point for JavaScript runtime (`./dist/index.js`).
 - `"types"`: Entry point for TypeScript type definitions (`./dist/index.d.ts`).
 - `"files": ["dist"]`: Ensures only the compiled `dist/` folder (along with `README.md` and `package.json`) is uploaded when publishing to npm, keeping the package size minimal.
@@ -107,6 +108,7 @@ When writing code that differs between Android and iOS without importing `react-
 
 1. **`src/getPlatform.ts` (Fallback & TypeScript source of truth)**
    TypeScript uses this file during compilation and type-checking. Always provide default fallback values (instead of `declare`) so non-mobile environments (Web, Node, Jest) don't crash at runtime:
+
    ```ts
    export type AvailableMobilePlatform = "android" | "ios" | "other";
 
@@ -123,18 +125,81 @@ When writing code that differs between Android and iOS without importing `react-
 ## 6. Build, Test Locally, and Publish
 
 ### Build the package
+
 ```bash
 npm run build
 ```
+
 Verify that the `dist/` directory contains `.js`, `.d.ts`, and `.map` files.
 
 ### Preview what will be published
+
 ```bash
 npm pack --dry-run
 ```
+
 This lists every file that will be included in the npm tarball.
 
+> **Note:** Do not name internal developer notes `README.*.md` (e.g., `README.dev.md`) in the root directory, because npm automatically includes any root file starting with `README` in the published tarball. Name it `DEVELOPMENT.md` instead.
+
+### Test Locally in a React Native Project (Before Publishing)
+
+Because React Native's **Metro bundler** does not follow symlinks outside the project root by default, avoid `npm link` / `bun link`. Instead, pack the library into a `.tgz` archive and install it directly in your React Native app:
+
+#### Step 1: Create the `.tgz` tarball in this package directory
+
+```bash
+npm run build
+npm pack
+# Produces: mobile-dev-local-domain-1.0.0.tgz
+```
+
+#### Step 2: Install the `.tgz` file in your React Native project
+
+Run the command below inside your React Native project directory:
+
+```bash
+# Using Bun:
+bun add /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0.tgz
+
+# Using npm:
+npm install /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0.tgz
+
+# Using Yarn:
+yarn add /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0.tgz
+
+# Using pnpm:
+pnpm add /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0.tgz
+
+# Using bun:
+bun add /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0.tgz
+```
+
+_(Tip: If you rebuild and re-pack the `.tgz` with the same version `1.0.0` while using Bun, run `bun add --no-cache /absolute/path/to/mobile-dev-local-domain-1.0.0.tgz` so Bun doesn't use its cached tarball)._
+
+#### Step 3: Import & test in your React Native code
+
+```ts
+import { getLocalDevDomain, currentPlatform } from "mobile-dev-local-domain";
+
+console.log("Platform:", currentPlatform);
+console.log("Local domain:", getLocalDevDomain(8080));
+```
+
+If Metro was already running before installing the package, restart Metro with cache cleared (`npx react-native start --reset-cache` or `npx expo start -c`).
+
+#### Step 4: Clean up after testing
+
+```bash
+# In this package repo, remove the generated tarball
+rm mobile-dev-local-domain-1.0.0.tgz
+
+# In your React Native project, remove the local tarball or replace it once published
+bun remove mobile-dev-local-domain
+```
+
 ### Publish to npm
+
 ```bash
 # 1. Log in to your npm account (if not already logged in)
 npm login
@@ -147,6 +212,7 @@ npm publish --access public
 ```
 
 ### Releasing a new version later
+
 ```bash
 # Bump version (patch: 1.0.x, minor: 1.x.0, major: x.0.0)
 npm version patch

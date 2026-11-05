@@ -5,6 +5,7 @@ A lightweight utility package for React Native / mobile applications that resolv
 ## Why?
 
 When developing a mobile app alongside a local backend server on your machine:
+
 - **iOS Simulator** shares the host machine's network stack and can access your local server via `http://localhost:<port>`.
 - **Android Emulator** runs inside a virtual router where `localhost` (`127.0.0.1`) points to the emulator itself. To reach the host machine's loopback interface, you must use the special alias `http://10.0.2.2:<port>`.
 
@@ -18,6 +19,8 @@ npm install mobile-dev-local-domain
 yarn add mobile-dev-local-domain
 # or
 pnpm add mobile-dev-local-domain
+# or
+bun add mobile-dev-local-domain
 ```
 
 ## Usage
@@ -47,19 +50,19 @@ import {
 } from "mobile-dev-local-domain";
 
 console.log(currentPlatform); // "android" | "ios" | "other"
-console.log(isAndroid);       // true on Android, false otherwise
-console.log(isIOS);           // true on iOS, false otherwise
+console.log(isAndroid); // true on Android, false otherwise
+console.log(isIOS); // true on iOS, false otherwise
 ```
 
 ## API Reference
 
 ### `getLocalDevDomain(port: number): string | undefined`
 
-| Platform | Return Value |
-| --- | --- |
-| Android (`.android`) | `http://10.0.2.2:${port}` |
-| iOS (`.ios`) | `http://localhost:${port}` |
-| Other / Fallback | `undefined` |
+| Platform             | Return Value               |
+| -------------------- | -------------------------- |
+| Android (`.android`) | `http://10.0.2.2:${port}`  |
+| iOS (`.ios`)         | `http://localhost:${port}` |
+| Other / Fallback     | `undefined`                |
 
 ### Exported Constants & Types
 

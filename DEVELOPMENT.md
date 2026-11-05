@@ -170,9 +170,6 @@ yarn add /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0
 
 # Using pnpm:
 pnpm add /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0.tgz
-
-# Using bun:
-bun add /absolute/path/to/mobile-dev-local-domain/mobile-dev-local-domain-1.0.0.tgz
 ```
 
 _(Tip: If you rebuild and re-pack the `.tgz` with the same version `1.0.0` while using Bun, run `bun add --no-cache /absolute/path/to/mobile-dev-local-domain-1.0.0.tgz` so Bun doesn't use its cached tarball)._
